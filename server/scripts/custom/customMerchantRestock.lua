@@ -13,7 +13,10 @@
 		3) Add the below line to your `customScripts.lua` file:
 				require("custom.customMerchantRestock")
 		4) BE SURE THERE IS NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
-		5) Save `customScripts.lua` and restart your server.
+		5) Save `customScripts.lua`
+    6) Using a Mash/Bash or MO2 setup, run the dumper here inside of your Data Files folder: https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
+    7) Place the newly created `merchantIndexDatabase.json` file into your server's `server/data/custom` folder.
+    8) Restart the server. To disable restocking of items or gold for any merchant, simply open the json file and edit their `restocksGold` or `restocksItem` values to false.
 
 
 	VERSION HISTORY:
