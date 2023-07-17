@@ -1,17 +1,17 @@
 --[[
 	Lear's Custom Merchant Restock Script:
-		version 1.00 (for TES3MP 0.8 & 0.8.1)
+  version 1.00 (for TES3MP 0.8 & 0.8.1)
 
 	DESCRIPTION:
-		This simple script will ensure your designated merchants always have their gold restocked.
-		Simply add the refId of the merchant you want to always restock gold into the `restockingGoldMerchants` table below.
+  This simple script will ensure your designated merchants always have their gold restocked.
+  Simply add the refId of the merchant you want to always restock gold into the `restockingGoldMerchants` table below.
 
 	INSTALLATION:
   1) Place this file as `customMerchantRestock.lua` inside your TES3MP servers `server\scripts\custom` folder.
   2) Open your `customScripts.lua` file in a text editor.
-				(It can be found in `server\scripts` folder.)
+      (It can be found in `server\scripts` folder.)
   3) Add the below line to your `customScripts.lua` file:
-    require("custom.customMerchantRestock")
+      require("custom.customMerchantRestock")
   4) BE SURE THERE IS NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
   5) Save `customScripts.lua`
   6) Using a Mash/Bash or MO2 setup, run the dumper here inside of your Data Files folder: https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
@@ -20,11 +20,11 @@
 
 
 	VERSION HISTORY:
-		1.00 (5/30/2022)		- Initial public release.
+  1.00 (5/30/2022)		- Initial public release.
 
-		05/16/2023          - modified by skoomabreath for item restocking
-		07/16/2023          - modified by magicaldave (S3ctor) & NuclearWaste to include all restocking merchants' inventories https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
-    07/17/2023          - S3 fork, rewritten to use external databases for optimization and additional mod support. :flex:
+  05/16/2023          - modified by skoomabreath for item restocking
+  07/16/2023          - modified by magicaldave (S3ctor) & NuclearWaste to include all restocking merchants' inventories https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
+  07/17/2023          - S3 fork, rewritten to use external databases for optimization and additional mod support. :flex:
 --]]
 
 
