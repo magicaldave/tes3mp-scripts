@@ -7,16 +7,16 @@
 		Simply add the refId of the merchant you want to always restock gold into the `restockingGoldMerchants` table below.
 
 	INSTALLATION:
-		1) Place this file as `customMerchantRestock.lua` inside your TES3MP servers `server\scripts\custom` folder.
-		2) Open your `customScripts.lua` file in a text editor.
+  1) Place this file as `customMerchantRestock.lua` inside your TES3MP servers `server\scripts\custom` folder.
+  2) Open your `customScripts.lua` file in a text editor.
 				(It can be found in `server\scripts` folder.)
-		3) Add the below line to your `customScripts.lua` file:
-				require("custom.customMerchantRestock")
-		4) BE SURE THERE IS NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
-		5) Save `customScripts.lua`
-    6) Using a Mash/Bash or MO2 setup, run the dumper here inside of your Data Files folder: https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
-    7) Place the newly created `merchantIndexDatabase.json` file into your server's `server/data/custom` folder.
-    8) Restart the server. To disable restocking of items or gold for any merchant, simply open the json file and edit their `restocksGold` or `restocksItem` values to false.
+  3) Add the below line to your `customScripts.lua` file:
+    require("custom.customMerchantRestock")
+  4) BE SURE THERE IS NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
+  5) Save `customScripts.lua`
+  6) Using a Mash/Bash or MO2 setup, run the dumper here inside of your Data Files folder: https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
+  7) Place the newly created `merchantIndexDatabase.json` file into your server's `server/data/custom` folder.
+  8) Restart the server. To disable restocking of items or gold for any merchant, simply open the json file and edit their `restocksGold` or `restocksItem` values to false.
 
 
 	VERSION HISTORY:
