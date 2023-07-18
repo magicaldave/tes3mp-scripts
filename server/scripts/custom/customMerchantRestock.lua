@@ -42,6 +42,7 @@ local initialMerchantGoldTracking = {} -- Used below for tracking merchant uniqu
 local fixGoldPool = function(pid, cellDescription, object)
   local refId = object.refId
   local uniqueIndex = object.uniqueIndex
+  local expectedGoldPool = merchantData[refId].goldPool or initialMerchantGoldTracking[uniqueIndex]
 
 	if not initialMerchantGoldTracking[uniqueIndex] then return end
 
@@ -52,7 +53,7 @@ local fixGoldPool = function(pid, cellDescription, object)
 
     local currentGoldPool = objectData[uniqueIndex].goldPool
 
-    if not currentGoldPool or currentGoldPool >= merchantData[refId].goldPool then return end
+    if not currentGoldPool or currentGoldPool >= expectedGoldPool then return end
 
     tes3mp.ClearObjectList()
     tes3mp.SetObjectListPid(pid)
@@ -149,7 +150,12 @@ customEventHooks.registerValidator("OnObjectMiscellaneous", function(eventStatus
                                        if not initialMerchantGoldTracking[uniqueIndex] then
                                          if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Capturing initial gold count for merchant " .. object.refId .. " with gold count " .. merchantData[object.refId].goldPool) end
 
-                                         initialMerchantGoldTracking[uniqueIndex] = merchantData[object.refId].goldPool
+                                         if merchantData[object.refId] then
+                                           initialMerchantGoldTracking[uniqueIndex] = merchantData[object.refId].goldPool
+                                         else
+                                           initialMerchantGoldTracking[uniqueIndex] = object.goldPool
+                                         end
+
                                        else
                                          if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This merchant restocks gold, invoking fixGoldPool") end
 
