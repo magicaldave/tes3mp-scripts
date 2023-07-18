@@ -123,16 +123,17 @@ customEventHooks.registerValidator("OnObjectDialogueChoice", function(eventStatu
       local merchant = merchantData[object.refId]
 
       if not merchant then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.INFO, "Tried to reset " .. merchant .. ", who is not present in the dataset. Please report this in the tes3mp discord!") end return end
+        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Tried to reset " .. merchant .. ", who is not present in the dataset. Please report this in the tes3mp discord!") end return end
 
       if object.dialogueChoiceType ~= 3 then return end -- BARTER
 
       if merchant.restocksItems then
+        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, merchant .. " merchant restocks items, invoking restockItems") end
         restockItems(pid, cellDescription, merchant, object)
       end
 
       if merchant.restocksGold then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This merchant restocks gold, invoking fixGoldPool") end
+        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, merchant .. " restocks gold, invoking fixGoldPool") end
         fixGoldPool(pid, cellDescription, object)
       end
 
