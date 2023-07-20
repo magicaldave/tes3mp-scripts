@@ -1,30 +1,27 @@
 --[[
 	Lear's Custom Merchant Restock Script:
-  version 1.00 (for TES3MP 0.8 & 0.8.1)
+		version 1.00 (for TES3MP 0.8 & 0.8.1)
 
 	DESCRIPTION:
-  This simple script will ensure your designated merchants always have their gold restocked.
-  Simply add the refId of the merchant you want to always restock gold into the `restockingGoldMerchants` table below.
+		This simple script will ensure your designated merchants always have their gold restocked.
+		Simply add the refId of the merchant you want to always restock gold into the `restockingGoldMerchants` table below.
 
 	INSTALLATION:
-  1) Place this file as `customMerchantRestock.lua` inside your TES3MP servers `server\scripts\custom` folder.
-  2) Open your `customScripts.lua` file in a text editor.
-      (It can be found in `server\scripts` folder.)
-  3) Add the below line to your `customScripts.lua` file:
-      require("custom.customMerchantRestock")
-  4) BE SURE THERE ARE NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
-  5) Save `customScripts.lua`
-  6) Using a Mash/Bash or MO2 setup, run the dumper here inside of your Data Files folder: https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
-  7) Place the newly created `merchantIndexDatabase.json` file into your server's `server/data/custom` folder.
-  8) Restart the server. To disable restocking of items or gold for any merchant, simply open the json file and edit their `restocksGold` or `restocksItem` values to false.
+		1) Place this file as `customMerchantRestock.lua` inside your TES3MP servers `server\scripts\custom` folder.
+		2) Open your `customScripts.lua` file in a text editor.
+				(It can be found in `server\scripts` folder.)
+		3) Add the below line to your `customScripts.lua` file:
+				require("custom.customMerchantRestock")
+		4) BE SURE THERE IS NO `--` SYMBOLS TO THE LEFT OF IT, ELSE IT WILL NOT WORK.
+		5) Save `customScripts.lua` and restart your server.
 
 
 	VERSION HISTORY:
-  1.00 (5/30/2022)		- Initial public release.
+		1.00 (5/30/2022)		- Initial public release.
 
-  05/16/2023          - modified by skoomabreath for item restocking
-  07/16/2023          - modified by magicaldave (S3ctor) & NuclearWaste to include all restocking merchants' inventories https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
-  07/17/2023          - S3 fork, rewritten to use external databases for optimization and additional mod support. :flex:
+		05/16/2023          - modified by skoomabreath for item restocking
+		07/16/2023          - modified by magicaldave (S3ctor) & NuclearWaste to include all restocking merchants' inventories https://github.com/magicaldave/motherJungle/releases/tag/merchantIndexGrabber
+    07/17/2023          - S3 fork, rewritten to use external databases for optimization and additional mod support. :flex:
 --]]
 
 
@@ -36,15 +33,22 @@ customMerchantRestock = {}
 -- Fuck that fella we got rust around these parts
 
 local merchantData = jsonInterface.load("custom/merchantIndexDatabase.json")
-local merchantRestockLog = false
+local merchantRestockLog = true
 
 local initialMerchantGoldTracking = {} -- Used below for tracking merchant uniqueIndexes and their goldPools.
-local fixGoldPool = function(pid, cellDescription, object)
+
+local function fixGoldPool(pid, cellDescription, object)
   local refId = object.refId
   local uniqueIndex = object.uniqueIndex
-  local expectedGoldPool = merchantData[refId].goldPool or initialMerchantGoldTracking[uniqueIndex]
+  local expectedGoldPool
 
-	if not initialMerchantGoldTracking[uniqueIndex] then return end
+  if merchantData[refId] then
+    expectedGoldPool = merchantData[refId].gold_pool
+  else
+    expectedGoldPool = initialMerchantGoldTracking[uniqueIndex]
+  end
+
+	if not expectedGoldPool then return end
 
 		local cell = LoadedCells[cellDescription]
 		local objectData = cell.data.objectData
@@ -67,7 +71,7 @@ local fixGoldPool = function(pid, cellDescription, object)
       objectData[uniqueIndex].lastGoldRestockDay = 0
     end
 
-    objectData[uniqueIndex].goldPool = merchantData[refId].goldPool
+    objectData[uniqueIndex].goldPool = expectedGoldPool
 
     packetBuilder.AddObjectMiscellaneous(uniqueIndex, objectData[uniqueIndex])
 
@@ -75,95 +79,117 @@ local fixGoldPool = function(pid, cellDescription, object)
 
 end
 
-local restockItems = function(pid, cellDescription, merchant, receivedObject)
+local function restockItems(pid, cellDescription, merchant, receivedObject)
 
-    if not receivedObject.uniqueIndex
+  if not receivedObject.uniqueIndex
     or not merchant then
-      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Received nil object indices, something went very sideways") end return end
+    if merchantRestockLog then
+    tes3mp.LogAppend(enumerations.log.WARN, "Received nil object indices, something went very sideways") end return end
 
-        local cell = LoadedCells[cellDescription]
-        local objectData = cell.data.objectData
-				local reloadInventory = false
-				local currentInventory = objectData[receivedObject.uniqueIndex].inventory
+  local cell = LoadedCells[cellDescription]
+  local objectData = cell.data.objectData
+  local reloadInventory = false
+  local currentInventory = objectData[receivedObject.uniqueIndex].inventory
 
-				local expectedInventory = merchantData[receivedObject.refId].items
+  tableHelper.print(receivedObject)
 
-        for _, object in pairs(currentInventory) do
-          if merchant.items[object.refId] and object.count < merchant.items[object.refId] then
-              object.count = merchant.items[object.refId]
-              if not reloadInventory then reloadInventory = true end
-            end
-          end
+  local expectedInventory = merchantData[receivedObject.refId].items
 
-        for name, count in pairs(expectedInventory) do
-          if not tableHelper.containsValue(currentInventory, name, true) then
-            -- I'm concerned this might hose enchanted/magical item sales, but I'm willing to scream test it.
-            inventoryHelper.addItem(currentInventory, name, count, -1, -1, "")
-            if not reloadInventory then reloadInventory = true end
-          end
+  for _, object in pairs(currentInventory) do
+    if merchant.items[object.refId] and object.count < merchant.items[object.refId] then
+      object.count = merchant.items[object.refId]
+      if not reloadInventory then reloadInventory = true end
+    end
+  end
+
+  for name, count in pairs(expectedInventory) do
+    if not tableHelper.containsValue(currentInventory, name, true) then
+      -- I'm concerned this might hose enchanted/magical item sales, but I'm willing to scream test it.
+      inventoryHelper.addItem(currentInventory, name, count, -1, -1, "")
+      if not reloadInventory then reloadInventory = true end
+    end
+  end
+
+  if reloadInventory then
+    --load container data for all pids in the cell
+    for i = 0, #Players do
+      if Players[i] ~= nil and Players[i]:IsLoggedIn() then
+        if Players[i].data.location.cell == cellDescription then
+          cell:LoadContainers(i, cell.data.objectData, {receivedObject.uniqueIndex})
         end
-
-        if reloadInventory then
-          --load container data for all pids in the cell
-          for i = 0, #Players do
-            if Players[i] ~= nil and Players[i]:IsLoggedIn() then
-              if Players[i].data.location.cell == cellDescription then
-                cell:LoadContainers(i, cell.data.objectData, {receivedObject.uniqueIndex})
-              end
-            end
-          end
-        end
+      end
+    end
+  end
 end
 
-customEventHooks.registerValidator("OnObjectDialogueChoice", function(eventStatus, pid, cellDescription, objects)
-    if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
+local function OnObjectDialogueChoice(eventStatus, pid, cellDescription, objects)
+  if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
 
-		for uniqueIndex, object in pairs(objects) do
+  for uniqueIndex, object in pairs(objects) do
 
-      local merchant = merchantData[object.refId]
+    if object.dialogueChoiceType ~= enumerations.dialogueChoice.BARTER then return end
 
-      if not merchant then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Tried to reset " .. merchant .. ", who is not present in the dataset. Please report this in the tes3mp discord!") end return end
+    local target = object.refId
+    local merchant = merchantData[target]
 
-      if object.dialogueChoiceType ~= 3 then return end -- BARTER
+    if not merchant then
+      if merchantRestockLog
+      then tes3mp.LogAppend(enumerations.log.INFO, "Tried to reset " .. target .. ", who is not present in the dataset. Please report this in the tes3mp discord!") end
+      fixGoldPool(pid, cellDescription, object) return end
 
-      if merchant.restocksItems then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, merchant .. " merchant restocks items, invoking restockItems") end
-        restockItems(pid, cellDescription, merchant, object)
+    if merchant.restocks_items then
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, target .. " restocks items, invoking restockItems") end
+      restockItems(pid, cellDescription, merchant, object)
+    end
+
+    if merchant.restocks_gold then
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, target .. " restocks gold, invoking fixGoldPool") end
+      fixGoldPool(pid, cellDescription, object)
+    end
+
+    if merchant.restocks_containers then
+      local cellData = LoadedCells[cellDescription].data.objectData
+      for index, object in pairs(cellData) do
+        if merchantData[object.refId] then
+          tes3mp.LogAppend(enumerations.log.WARN, "Trying to reload container data for " .. index)
+          restockItems(pid, cellDescription, merchant, {uniqueIndex = index, refId = object.refId})
+        end
+      end
+    end
+  end
+end
+
+local function OnObjectMiscellaneous(eventStatus, pid, cellDescription, objects)
+  if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
+  tableHelper.print(objects)
+
+  for uniqueIndex, object in pairs(objects) do
+    if not object.goldPool or object.goldPool < 0 then
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This object's goldpool is nil or invalid") end return end
+
+    local merchant = merchantData[object.refId]
+
+    if not initialMerchantGoldTracking[uniqueIndex] then
+
+      if merchant then
+        initialMerchantGoldTracking[uniqueIndex] = merchantData[object.refId].gold_pool
+      else
+        initialMerchantGoldTracking[uniqueIndex] = object.goldPool
       end
 
-      if merchant.restocksGold then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, merchant .. " restocks gold, invoking fixGoldPool") end
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Captured initial gold count for merchant " .. object.refId) end
+
+    else
+
+      if not merchant or merchant.restocks_gold then
+        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This merchant restocks gold, invoking fixGoldPool") end
         fixGoldPool(pid, cellDescription, object)
       end
+    end
+  end
+end
 
-		end
-end)
-
-customEventHooks.registerValidator("OnObjectMiscellaneous", function(eventStatus, pid, cellDescription, objects)
-                                     if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
-                                     tableHelper.print(objects)
-
-                                     for uniqueIndex, object in pairs(objects) do
-                                       if not object.goldPool or object.goldPool < 0 then
-                                         if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This object's goldpool is nil or invalid") end return end
-
-                                       if not initialMerchantGoldTracking[uniqueIndex] then
-                                         if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Capturing initial gold count for merchant " .. object.refId .. " with gold count " .. merchantData[object.refId].goldPool) end
-
-                                         if merchantData[object.refId] then
-                                           initialMerchantGoldTracking[uniqueIndex] = merchantData[object.refId].goldPool
-                                         else
-                                           initialMerchantGoldTracking[uniqueIndex] = object.goldPool
-                                         end
-
-                                       else
-                                         if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This merchant restocks gold, invoking fixGoldPool") end
-
-                                         fixGoldPool(pid, cellDescription, object)
-                                       end
-
-                                     end
-end)
+customEventHooks.registerValidator("OnObjectDialogueChoice", OnObjectDialogueChoice)
+customEventHooks.registerValidator("OnObjectMiscellaneous", OnObjectMiscellaneous)
 
 return customMerchantRestock
