@@ -32,7 +32,6 @@ customMerchantRestock = {}
 -- Add the uniqueIndex of the merchant and table of items you want to restock in the format shown below
 -- Fuck that fella we got rust around these parts
 
-local merchantData = jsonInterface.load("custom/merchantIndexDatabase.json")
 local merchantRestockLog = false
 
 local initialMerchantGoldTracking = {} -- Used below for tracking merchant uniqueIndexes and their goldPools.
@@ -115,10 +114,16 @@ local function restockItems(pid, cellDescription, merchant, receivedObject)
   end
 
   for name, count in pairs(expectedInventory) do
-    if not tableHelper.containsValue(currentInventory, name, true) then
-      -- I'm concerned this might hose enchanted/magical item sales, but I'm willing to scream test it.
-      inventoryHelper.addItem(currentInventory, name, count, -1, -1, "")
-      if not reloadInventory then reloadInventory = true end
+    if merchantRestockLog then
+      tes3mp.LogAppend(enumerations.log.WARN, "Checking if " .. name .. " is a list") end
+    if not merchantData[name] then -- Levelled list items will exist as keys in MerchantData, so we skip them for now
+      if merchantRestockLog then
+        tes3mp.LogAppend(enumerations.log.WARN, "Received a list item, do moar work to handle " .. name) end
+      if not tableHelper.containsValue(currentInventory, name, true) then
+        -- I'm concerned this might hose enchanted/magical item sales, but I'm willing to scream test it.
+        inventoryHelper.addItem(currentInventory, name, count, -1, -1, "")
+        if not reloadInventory then reloadInventory = true end
+      end
     end
   end
 
