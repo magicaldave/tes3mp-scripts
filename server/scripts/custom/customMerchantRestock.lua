@@ -33,7 +33,7 @@ customMerchantRestock = {}
 -- Fuck that fella we got rust around these parts
 
 local merchantData = jsonInterface.load("custom/merchantIndexDatabase.json")
-local merchantRestockLog = true
+local merchantRestockLog = false
 
 local initialMerchantGoldTracking = {} -- Used below for tracking merchant uniqueIndexes and their goldPools.
 
@@ -90,8 +90,6 @@ local function restockItems(pid, cellDescription, merchant, receivedObject)
   local objectData = cell.data.objectData
   local reloadInventory = false
   local currentInventory = objectData[receivedObject.uniqueIndex].inventory
-
-  tableHelper.print(receivedObject)
 
   local expectedInventory = merchantData[receivedObject.refId].items
 
@@ -151,7 +149,7 @@ local function OnObjectDialogueChoice(eventStatus, pid, cellDescription, objects
       local cellData = LoadedCells[cellDescription].data.objectData
       for index, object in pairs(cellData) do
         if merchantData[object.refId] then
-          tes3mp.LogAppend(enumerations.log.WARN, "Trying to reload container data for " .. index)
+          if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Trying to reload container data for " .. index) end
           restockItems(pid, cellDescription, merchant, {uniqueIndex = index, refId = object.refId})
         end
       end
@@ -161,7 +159,6 @@ end
 
 local function OnObjectMiscellaneous(eventStatus, pid, cellDescription, objects)
   if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
-  tableHelper.print(objects)
 
   for uniqueIndex, object in pairs(objects) do
     if not object.goldPool or object.goldPool < 0 then
