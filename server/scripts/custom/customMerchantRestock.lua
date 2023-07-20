@@ -37,6 +37,15 @@ local merchantRestockLog = false
 
 local initialMerchantGoldTracking = {} -- Used below for tracking merchant uniqueIndexes and their goldPools.
 
+local function dataLoaded()
+  if not merchantData then
+    tes3mp.LogAppend(enumerations.log.WARN, "Your merchant database has not been generated. Please use merchantIndexGrabber to generate the necessary database.")
+    return false
+  else
+    return true
+  end
+end
+
 local function fixGoldPool(pid, cellDescription, object)
   local refId = object.refId
   local uniqueIndex = object.uniqueIndex
