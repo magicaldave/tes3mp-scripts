@@ -144,35 +144,40 @@ local function resetMerchantData(eventStatus, pid, cellDescription, objects)
     local target = object.refId
     local merchant = merchantData[target]
 
+    -- Every merchant resets gold by default, but we can't do it conditionally or configurably for those that don't restock.
     if not merchant then
       if merchantRestockLog
-      then tes3mp.LogAppend(enumerations.log.INFO, "Tried to reset " .. target .. ", who is not present in the dataset. Please report this in the tes3mp discord!") end
-      fixGoldPool(pid, cellDescription, object) return end
+      then tes3mp.LogAppend(enumerations.log.WARN, "Tried to reset " .. target .. ", who is not present in the dataset. " ..
+                            "If this merchant should reset, please regenerate your merchantIndexGrabber database or report the issue in the tes3mp Discord!") end
+      fixGoldPool(pid, cellDescription, object)
+      return end
 
     if merchant.restocks_items then
       if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, target .. " restocks items, invoking restockItems") end
       restockItems(pid, cellDescription, merchant, object)
     end
 
-    if merchant.restocks_gold then
-      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, target .. " restocks gold, invoking fixGoldPool") end
-      fixGoldPool(pid, cellDescription, object)
-    end
-
+    -- If the merchant is set to restock their containers, use the restockItems function to reinitialize the containers.
+    -- Each container can be disabled individually by setting its `restocks_items` value to false.
     if merchant.restocks_containers then
       local cellData = LoadedCells[cellDescription].data.objectData
       for index, object in pairs(cellData) do
-        if merchantData[object.refId] then
+        target = merchantData[object.refId]
+        if target and target.restocks_items then
           if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Trying to reload container data for " .. index) end
           restockItems(pid, cellDescription, merchant, {uniqueIndex = index, refId = object.refId})
         end
       end
     end
+
+    if merchant.restocks_gold then
+      fixGoldPool(pid, cellDescription, object)
+    end
   end
 end
 
-local function OnObjectMiscellaneous(eventStatus, pid, cellDescription, objects)
-  if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
+local function getInitialGold(eventStatus, pid, cellDescription, objects)
+  if not Players[pid] or not Players[pid]:IsLoggedIn() or not dataLoaded() then return end
 
   for uniqueIndex, object in pairs(objects) do
     if not object.goldPool or object.goldPool < 0 then
