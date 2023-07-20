@@ -193,7 +193,14 @@ local function getInitialGold(eventStatus, pid, cellDescription, objects)
   end
 end
 
-customEventHooks.registerValidator("OnObjectDialogueChoice", resetMerchantData)
+local function loadMerchants()
+  merchantData = jsonInterface.load("custom/merchantIndexDatabase.json")
+end
+
+customEventHooks.registerHandler("OnObjectDialogueChoice", resetMerchantData)
 customEventHooks.registerValidator("OnObjectMiscellaneous", getInitialGold)
+customEventHooks.registerHandler("OnServerPostInit", loadMerchants)
+
+customCommandHooks.registerCommand("reloadmerchants", loadMerchants)
 
 return customMerchantRestock
