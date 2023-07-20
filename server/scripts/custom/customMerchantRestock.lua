@@ -57,16 +57,21 @@ local function fixGoldPool(pid, cellDescription, object)
     expectedGoldPool = initialMerchantGoldTracking[uniqueIndex]
   end
 
-	if not expectedGoldPool then return end
+	if not expectedGoldPool then
+    if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Nil expectedGoldPool, unable to reset " .. refId .. "'s goldPool") end
+    return end
 
 		local cell = LoadedCells[cellDescription]
 		local objectData = cell.data.objectData
 
-		if not objectData[uniqueIndex] or not objectData[uniqueIndex].refId then return end
+		if not objectData[uniqueIndex] or not objectData[uniqueIndex].refId then
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Object does not exist in this cell") end
+      return end
 
     local currentGoldPool = objectData[uniqueIndex].goldPool
 
-    if not currentGoldPool or currentGoldPool >= expectedGoldPool then return end
+    if not currentGoldPool or currentGoldPool >= expectedGoldPool then
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Object doesn't need a gold reset.") end return end
 
     tes3mp.ClearObjectList()
     tes3mp.SetObjectListPid(pid)
