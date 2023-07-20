@@ -134,8 +134,8 @@ local function restockItems(pid, cellDescription, merchant, receivedObject)
   end
 end
 
-local function OnObjectDialogueChoice(eventStatus, pid, cellDescription, objects)
-  if not Players[pid] or not Players[pid]:IsLoggedIn() then return end
+local function resetMerchantData(eventStatus, pid, cellDescription, objects)
+  if not Players[pid] or not Players[pid]:IsLoggedIn() or not dataLoaded() then return end
 
   for uniqueIndex, object in pairs(objects) do
 
@@ -180,27 +180,15 @@ local function OnObjectMiscellaneous(eventStatus, pid, cellDescription, objects)
 
     local merchant = merchantData[object.refId]
 
-    if not initialMerchantGoldTracking[uniqueIndex] then
-
-      if merchant then
-        initialMerchantGoldTracking[uniqueIndex] = merchantData[object.refId].gold_pool
-      else
-        initialMerchantGoldTracking[uniqueIndex] = object.goldPool
-      end
-
-      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Captured initial gold count for merchant " .. object.refId) end
-
-    else
-
-      if not merchant or merchant.restocks_gold then
-        if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "This merchant restocks gold, invoking fixGoldPool") end
-        fixGoldPool(pid, cellDescription, object)
-      end
+    if not merchant and not initialMerchantGoldTracking[uniqueIndex] then
+      initialMerchantGoldTracking[uniqueIndex] = object.goldPool
+      if merchantRestockLog then tes3mp.LogAppend(enumerations.log.WARN, "Captured initial gold count for " .. object.refId .. " as " .. object.goldPool) end
     end
+
   end
 end
 
-customEventHooks.registerValidator("OnObjectDialogueChoice", OnObjectDialogueChoice)
-customEventHooks.registerValidator("OnObjectMiscellaneous", OnObjectMiscellaneous)
+customEventHooks.registerValidator("OnObjectDialogueChoice", resetMerchantData)
+customEventHooks.registerValidator("OnObjectMiscellaneous", getInitialGold)
 
 return customMerchantRestock
