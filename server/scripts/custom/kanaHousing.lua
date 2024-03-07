@@ -840,22 +840,40 @@ end
 
 -- PLAYER SELECT HOUSE ALL LIST
 showAllHousesList = function(pid)
-	local message = "Select a house from the list to learn more."
-	
+	local message = "Select a house from the list to learn more.\n" .. color.Red .. "Owned houses\n" .. color.Lime .. "Available houses\n"
+
 	--Generate a list of options
-	local options = {}	
+	local options = {}
 	local list = "* CLOSE *\n"
-	
+	local availability
+
+	-- sort alphabetical by cell name.....
+	local cells = {}
+	local unsorted_options = {}
 	for houseName, v in pairs(housingData.houses) do
-		table.insert(options, houseName)
+			table.insert(cells, v.inside.cell)
+			table.insert(unsorted_options, houseName)
 	end
-	for i=1, #options do
-		list = list .. options[i]
-		if not (i == #options) then
-			list = list .. "\n"
+
+	table.sort(cells, function(a,b) return a < b end)
+
+	for i = 1, #cells do
+			for _, name in pairs(unsorted_options) do
+					if cells[i] == housingData.houses[name].inside.cell then
+							table.insert(options, name)
+					end
+			end
+	end
+
+	for i, houseName in pairs(options) do
+		if getHouseOwnerName(houseName) then
+			availability = color.Red
+		else
+			availability = color.Lime
 		end
+		list = list .. cells[i] .. availability .. "--------------------------------------------------------------------------------------------------" .. "\n"
 	end
-	
+
 	playerAllHouseList[getName(pid)] = options
 	return tes3mp.ListBox(pid, config.PlayerAllHouseSelectGUI, message, list)
 end
@@ -1123,21 +1141,25 @@ end
 -- ADMIN SELECT HOUSE
 showAdminHouseSelect = function(pid)
 	local message = "Select a house from the list"
-	
+
 	--Generate a list of options
-	local options = {}	
+	local options = {}
 	local list = "* CLOSE *\n"
-	
+
 	for houseName, v in pairs(housingData.houses) do
 		table.insert(options, houseName)
 	end
+
+	table.sort(options, function(a,b) return a < b end)
+
 	for i=1, #options do
 		list = list .. options[i]
+		-- list = list .. options[i] .. color.Lime .. "\n--------->" .. color.Silver .. housingData.houses[options[i]].inside.cell
 		if not (i == #options) then
 			list = list .. "\n"
 		end
 	end
-	
+
 	adminHouseList[getName(pid)] = options
 	return tes3mp.ListBox(pid, config.AdminHouseSelectGUI, message, list)
 end
